@@ -14,11 +14,11 @@ to create file use custom command ctf and finally to read files insides use cust
 
 ------------------------------------------------------------------------PARAMS FOR SHELL----------------------------------------------------------------------------------
 
-=======================================================================PARAMS FOR CMD PROMPT==============================================================================
-Now little bit about shell params you can use (you can use python main.y --help but maybe it would be comfortable to read it here)
+=======================================================================PARAMS_FOR_CMD_PROMPT===========================================================================
+Now little bit about shell params you can use (you can use python main.py --help but maybe it would be comfortable to read it here)
 -t, -p uses to specify IPV4 and port on which server will be bind and client will be connect by the standart it's localhost(127.0.0.1)and 5555 just to test script working
 -s uses to run script in server mode (REMEMBER IT'S reverse shell means that client which would connect to server will execute commands sending from server)
-=======================================================================PARAMS FOR FILES===================================================================================
+=======================================================================PARAMS FOR FILES===============================================================================
 -up uses for specify that work will be with uploading for client and downloading for server
 -abp uses to specify path to file which would send to server only for client option
 -nf uses to specify name for file which server would getting from client only for server option
